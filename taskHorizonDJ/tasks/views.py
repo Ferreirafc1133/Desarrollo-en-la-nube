@@ -5,7 +5,7 @@ from .forms import TaskForm
 # Ver lista de tareas
 def list_tasks(request):
     tasks = Task.objects.all()
-    return render(request, 'tasks/list_tasks.html', {'tasks': tasks})
+    return render(request, 'tasks/list_task.html', {'tasks': tasks})
 
 # Crear tarea
 def create_task(request):
