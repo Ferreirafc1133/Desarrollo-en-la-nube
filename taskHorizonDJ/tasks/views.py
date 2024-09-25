@@ -5,7 +5,7 @@ from .forms import TaskForm
 # Ver lista de tareas
 def list_tasks(request):
     tasks = Task.objects.all()
-    return render(request, 'tasks/list_task.html', {'tasks': tasks})
+    return render(request, 'task/list_task.html', {'tasks': tasks})
 
 # Crear tarea
 def create_task(request):
@@ -16,7 +16,7 @@ def create_task(request):
             return redirect('list_tasks')
     else:
         form = TaskForm()
-    return render(request, 'tasks/create_task.html', {'form': form})
+    return render(request, 'task/create_task.html', {'form': form})
 
 # Actualizar tarea
 def update_task(request, task_id):
@@ -28,7 +28,7 @@ def update_task(request, task_id):
             return redirect('list_tasks')
     else:
         form = TaskForm(instance=task)
-    return render(request, 'tasks/update_task.html', {'form': form, 'task': task})
+    return render(request, 'task/update_task.html', {'form': form, 'task': task})
 
 # Eliminar tarea
 def delete_task(request, task_id):
@@ -36,4 +36,4 @@ def delete_task(request, task_id):
     if request.method == 'POST':
         task.delete()
         return redirect('list_tasks')
-    return render(request, 'tasks/detail_task.html', {'task': task})
+    return render(request, 'task/detail_task.html', {'task': task})
