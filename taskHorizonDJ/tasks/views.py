@@ -7,7 +7,7 @@ from django.conf import settings
 
 # Ver lista de tareas
 def list_tasks(request):
-    tasks = Task.objects.all()
+    tasks = Task.objects.prefetch_related('archivos').all()
     return render(request, 'task/list_task.html', {'tasks': tasks})
 
 # Crear tarea
