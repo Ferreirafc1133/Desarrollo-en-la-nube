@@ -8,6 +8,7 @@
     <form method="POST">
         {% csrf_token %}
         {{ form.as_p }}
+        <input type="file" name="archivo">
         <button type="submit">Crear</button>
     </form>
     <a href="{% url 'list_tasks' %}">Volver a la lista</a>

@@ -15,7 +15,7 @@ class Task(models.Model):
 
 class Archivo(models.Model):
     tarea = models.ForeignKey(Task, related_name='archivos', on_delete=models.CASCADE)
-    archivo = models.FileField(upload_to='tareas/')
+    url_archivo = models.URLField(max_length=500)  
     tipo_archivo = models.CharField(max_length=50)
     cantidad_descargas = models.IntegerField(default=0)
 
