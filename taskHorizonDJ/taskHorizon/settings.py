@@ -122,3 +122,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+AWS_ACCESS_KEY_ID = 'ASIAYPPODGTX6DMF26C3'
+AWS_SECRET_ACCESS_KEY = 'c6RsSdPowlECWt0a2Tvt6U3B/mWn4i3d9Inlgw1x'
