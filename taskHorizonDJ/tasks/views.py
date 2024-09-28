@@ -42,61 +42,60 @@ def create_task(request):
     if request.method == 'POST':
         form = TaskForm(request.POST, request.FILES)
         if form.is_valid():
-            archivo = request.FILES.get('archivo')
+            archivos = request.FILES.getlist('archivo')
             nombre_tarea = request.POST.get('nombre')
             descripcion = request.POST.get('descripcion')
-            if archivo:
-                s3 = boto3.client('s3')
-                bucket_name = 'tareasextra'
-                file_name = archivo.name
-                fecha_subida = timezone.now().strftime('%Y%m%d_%H%M%S')
-                nombre_archivo = f"{file_name}_{fecha_subida}"
+            task_id = str(uuid.uuid4())
+            fecha_subida = timezone.now().strftime('%Y%m%d_%H%M%S')
 
-                try:
-                    s3.upload_fileobj(archivo, bucket_name, nombre_archivo)
-                    file_url = f"https://{bucket_name}.s3.amazonaws.com/{nombre_archivo}"
+            tasks_table.put_item(
+                Item={
+                    'task_id': task_id,
+                    'nombre_tarea': nombre_tarea,
+                    'descripcion': descripcion,
+                    'fecha_creacion': fecha_subida
+                }
+            )
 
-                    task_id = str(uuid.uuid4())
-                    archivo_id = str(uuid.uuid4())
+            for archivo in archivos:
+                if archivo.size <= 10 * 1024 * 1024:
+                    s3 = boto3.client('s3')
+                    bucket_name = 'tareasextra'
+                    file_name = archivo.name
+                    nombre_archivo = f"{file_name}_{fecha_subida}"
+                    
+                    try:
+                        s3.upload_fileobj(archivo, bucket_name, nombre_archivo)
+                        file_url = f"https://{bucket_name}.s3.amazonaws.com/{nombre_archivo}"
+                        archivo_id = str(uuid.uuid4())
 
-                    tasks_table.put_item(
-                        Item={
-                            'task_id': task_id,
-                            'nombre_tarea': nombre_tarea,
-                            'descripcion': descripcion,
-                            'fecha_creacion': fecha_subida
-                        }
-                    )
+                        files_table.put_item(
+                            Item={
+                                'archivo_id': archivo_id,
+                                'task_id': task_id,
+                                'nombre_archivo': nombre_archivo,
+                                'url_archivo': file_url,
+                                'tipo_archivo': archivo.content_type,
+                                'fecha_subida': fecha_subida
+                            }
+                        )
 
-                    files_table.put_item(
-                        Item={
-                            'archivo_id': archivo_id,
-                            'task_id': task_id,
-                            'nombre_archivo': nombre_archivo,
-                            'url_archivo': file_url,
-                            'tipo_archivo': archivo.content_type,
-                            'fecha_subida': fecha_subida
-                        }
-                    )
-
-                    return JsonResponse({
-                        "success": True,
-                        "message": "La tarea y el archivo se han creado correctamente.",
-                        "file_url": file_url,
-                        "task_id": task_id,
-                        "archivo_id": archivo_id
-                    })
-
-                except Exception as e:
+                    except Exception as e:
+                        return JsonResponse({
+                            "success": False,
+                            "message": f"Error subiendo archivo a S3 o DynamoDB: {e}"
+                        })
+                else:
                     return JsonResponse({
                         "success": False,
-                        "message": f"Error subiendo archivo a S3 o DynamoDB: {e}"
+                        "message": "Uno o más archivos exceden el límite de 10MB."
                     })
-            else:
-                return JsonResponse({
-                    "success": False,
-                    "message": "No se recibió ningún archivo para subir."
-                })
+
+            return JsonResponse({
+                "success": True,
+                "message": "La tarea y los archivos se han creado correctamente.",
+                "task_id": task_id
+            })
         else:
             return JsonResponse({
                 "success": False,
@@ -108,6 +107,27 @@ def create_task(request):
             "success": False,
             "message": "Método no permitido. Usa POST."
         }, status=405)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Actualizar tarea
 @csrf_exempt
