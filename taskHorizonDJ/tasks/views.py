@@ -26,8 +26,8 @@ def list_tasks(request):
     for task in tasks:
         task_id = task['task_id']
         files_response = files_table.query(
-            IndexName='task_idIndex',
-            KeyConditionExpression=Key('task_id').eq(task_id)
+            IndexName='task_idIndex',  # Usamos el índice task_idIndex
+            KeyConditionExpression=Key('task_id').eq(task_id)  # Buscamos archivos con el task_id
         )
         archivos = files_response.get('Items', [])
         tasks_with_files.append({
