@@ -125,44 +125,89 @@ def create_task(request):
 @csrf_exempt
 def update_task(request, task_id):
     if request.method == 'PUT':
-        request.PUT = QueryDict(request.body)
-        nombre_tarea = request.PUT.get('nombre')
-        descripcion = request.PUT.get('descripcion')
+        nombre = request.GET.get('nombre')
+        descripcion = request.GET.get('descripcion')
+        archivo = request.FILES.get('archivo')
 
-        if nombre_tarea and descripcion:
+        update_expression = "set"
+        expression_attribute_values = {}
+        has_updates = False
+
+        if nombre:
+            update_expression += " nombre_tarea=:n,"
+            expression_attribute_values[':n'] = nombre
+            has_updates = True
+
+        if descripcion:
+            update_expression += " descripcion=:d,"
+            expression_attribute_values[':d'] = descripcion
+            has_updates = True
+
+        if archivo:
+            s3 = boto3.client('s3')
+            bucket_name = 'tareasextra'
+            file_name = archivo.name
+            fecha_subida = timezone.now().strftime('%Y%m%d_%H%M%S')
+            nombre_archivo = f"{file_name}_{fecha_subida}"
+
             try:
-                tasks_table.update_item(
-                    Key={'task_id': task_id},
-                    UpdateExpression="SET nombre_tarea = :n, descripcion = :d",
-                    ExpressionAttributeValues={
-                        ':n': nombre_tarea,
-                        ':d': descripcion
+                s3.upload_fileobj(archivo, bucket_name, nombre_archivo)
+                file_url = f"https://{bucket_name}.s3.amazonaws.com/{nombre_archivo}"
+
+                archivo_id = str(uuid.uuid4())
+                files_table.put_item(
+                    Item={
+                        'archivo_id': archivo_id,
+                        'task_id': task_id,
+                        'nombre_archivo': nombre_archivo,
+                        'url_archivo': file_url,
+                        'tipo_archivo': archivo.content_type,
+                        'fecha_subida': fecha_subida
                     }
                 )
+                has_updates = True
 
-                # Notificar sobre la actualización
-                send_sns_notification(nombre_tarea, "actualizada")
+            except Exception as e:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error subiendo archivo a S3 o DynamoDB: {e}"
+                })
+
+        if has_updates:
+            update_expression = update_expression.rstrip(',')
+            try:
+                if expression_attribute_values:
+                    tasks_table.update_item(
+                        Key={'task_id': task_id},
+                        UpdateExpression=update_expression,
+                        ExpressionAttributeValues=expression_attribute_values,
+                        ReturnValues="UPDATED_NEW"
+                    )
+
+                task_name = nombre if nombre else "Tarea actualizada"
+                send_sns_notification(task_name, "actualizada")
 
                 return JsonResponse({
                     "success": True,
-                    "message": "La tarea fue actualizada correctamente."
+                    "message": "Tarea actualizada correctamente."
                 })
 
             except Exception as e:
                 return JsonResponse({
                     "success": False,
-                    "message": f"Error actualizando tarea en DynamoDB: {e}"
+                    "message": f"Error actualizando tarea: {e}"
                 })
         else:
             return JsonResponse({
-                "success": False,
-                "message": "Faltan campos en la solicitud."
+                "success": True,
+                "message": "No se realizaron cambios, tarea sin modificaciones."
             })
+    else:
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido. Usa PUT."
+        }, status=405)
 
-    return JsonResponse({
-        "success": False,
-        "message": "Método no permitido. Usa PUT."
-    }, status=405)
 
 # Eliminar tarea
 @csrf_exempt
