@@ -157,8 +157,8 @@ def update_task(request, task_id):
                 archivo_id = str(uuid.uuid4())
                 files_table.put_item(
                     Item={
-                        'archivo_id': archivo_id,
-                        'task_id': task_id,
+                        'archivo_id': str(archivo_id), 
+                        'task_id': str(task_id), 
                         'nombre_archivo': nombre_archivo,
                         'url_archivo': file_url,
                         'tipo_archivo': archivo.content_type,
@@ -178,7 +178,7 @@ def update_task(request, task_id):
             try:
                 if expression_attribute_values:
                     tasks_table.update_item(
-                        Key={'task_id': task_id},
+                        Key={'task_id': str(task_id)},
                         UpdateExpression=update_expression,
                         ExpressionAttributeValues=expression_attribute_values,
                         ReturnValues="UPDATED_NEW"
