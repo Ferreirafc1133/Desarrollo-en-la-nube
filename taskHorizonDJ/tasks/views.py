@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import uuid 
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr
 
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -25,9 +25,8 @@ def list_tasks(request):
 
     for task in tasks:
         task_id = task['task_id']
-        files_response = files_table.query(
-            IndexName='task_idIndex',  # Usamos el índice task_idIndex
-            KeyConditionExpression=Key('task_id').eq(task_id)  # Buscamos archivos con el task_id
+        files_response = files_table.scan(
+            FilterExpression=Attr('task_id').eq(task_id)
         )
         archivos = files_response.get('Items', [])
         tasks_with_files.append({
