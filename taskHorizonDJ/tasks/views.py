@@ -126,8 +126,10 @@ def create_task(request):
 @csrf_exempt
 def update_task(request, task_id):
     if request.method == 'PUT':
-        nombre = request.GET.get('nombre')
-        descripcion = request.GET.get('descripcion')
+        put_data = QueryDict(request.body) if not request.POST else request.POST
+
+        nombre = put_data.get('nombre')
+        descripcion = put_data.get('descripcion')
         archivo = request.FILES.get('archivo')
 
         update_expression = "set"
@@ -151,7 +153,17 @@ def update_task(request, task_id):
             nombre_archivo = f"{file_name}_{fecha_subida}"
 
             try:
-                s3.upload_fileobj(archivo, bucket_name, nombre_archivo)
+                s3.upload_fileobj(
+                    archivo, 
+                    bucket_name, 
+                    nombre_archivo, 
+                    ExtraArgs={
+                        'Metadata': {
+                            'x-amz-meta-tarea': task_id,
+                            'x-amz-meta-cantidadDescargas': '0'
+                        }
+                    }
+                )
                 file_url = f"https://{bucket_name}.s3.amazonaws.com/{nombre_archivo}"
 
                 archivo_id = str(uuid.uuid4())
@@ -170,7 +182,7 @@ def update_task(request, task_id):
             except Exception as e:
                 return JsonResponse({
                     "success": False,
-                    "message": f"Error subiendo archivo a S3 o DynamoDB: {e}"
+                    "message": f"Error subiendo archivo a S3 o DynamoDB: {str(e)}"
                 })
 
         if has_updates:
@@ -195,7 +207,7 @@ def update_task(request, task_id):
             except Exception as e:
                 return JsonResponse({
                     "success": False,
-                    "message": f"Error actualizando tarea: {e}"
+                    "message": f"Error actualizando tarea: {str(e)}"
                 })
         else:
             return JsonResponse({
