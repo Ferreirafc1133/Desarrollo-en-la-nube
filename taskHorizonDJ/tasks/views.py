@@ -22,7 +22,7 @@ def create_task(request):
             archivo = request.FILES.get('archivo')  
             if archivo:
                 s3 = boto3.client('s3')
-                bucket_name = 'tareasextra'
+                bucket_name = 'bucketscript1133'
                 file_name = archivo.name
                 
                 try:
