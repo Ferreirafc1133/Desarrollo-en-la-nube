@@ -8,14 +8,16 @@
 <body>
     <h1>Crear Nueva Tarea</h1>
 
+    <!-- Formulario para enviar mediante AJAX -->
     <form id="taskForm" enctype="multipart/form-data">
         {{ form.as_p }}
         <input type="file" name="archivo" id="archivo">
-        <button type="button" id="submitForm">Crear</button> 
+        <button type="button" id="submitForm">Crear</button> <!-- Cambié el type a "button" -->
     </form>
 
     <a href="{% url 'list_tasks' %}">Volver a la lista</a>
 
+    <!-- Script para manejar el envío AJAX -->
     <script>
         $(document).ready(function () {
             $('#submitForm').click(function () {
@@ -23,15 +25,15 @@
                 var formData = new FormData($('#taskForm')[0]);
 
                 $.ajax({
-                    url: "{% url 'create_task' %}", 
+                    url: "{% url 'create_task' %}",  // Asegúrate de que la URL está correcta
                     type: "POST",
                     data: formData,
-                    processData: false,
-                    contentType: false, 
+                    processData: false,  // No procesar los datos
+                    contentType: false,  // No establecer el tipo de contenido
                     success: function (response) {
                         if (response.success) {
                             alert("Tarea creada con éxito: " + response.message);
-                            window.location.href = "{% url 'list_tasks' %}";  
+                            window.location.href = "{% url 'list_tasks' %}";  // Redirigir a la lista de tareas
                         } else {
                             alert("Error: " + response.message);
                         }
