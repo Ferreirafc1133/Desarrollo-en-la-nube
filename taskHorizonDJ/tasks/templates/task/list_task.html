@@ -5,8 +5,6 @@
 </head>
 <body>
     <h1>Lista de Tareas</h1>
-    <a href="{% url 'create_task' %}">Crear Nueva Tarea</a>
-
     <ul>
         {% for task in tasks %}
             <li>
@@ -15,12 +13,11 @@
                 {% if task.archivos.all %}
                     ( 
                     {% for archivo in task.archivos.all %}
-                        <a href="{{ archivo.url_archivo }}" target="_blank">{{ archivo.archivo.name }}</a>{% if not forloop.last %}, {% endif %}
+                        <a href="{{ archivo.url_archivo }}" target="_blank">{{ archivo.tipo_archivo }}</a>{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                     )
                 {% endif %}
                 
-                <!-- Formulario para eliminar la tarea -->
                 <form action="{% url 'delete_task' task.id %}" method="POST" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit">Eliminar</button>
@@ -28,6 +25,5 @@
             </li>
         {% endfor %}
     </ul>
-
 </body>
 </html>

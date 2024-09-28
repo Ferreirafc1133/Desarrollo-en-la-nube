@@ -14,10 +14,9 @@ class Task(models.Model):
         return timezone.now() > self.fecha + timedelta(days=30)
 
 class Archivo(models.Model):
-    tarea = models.ForeignKey(Task, related_name='archivos', on_delete=models.CASCADE)
+    nombre = models.CharField(max_length=255)
     url_archivo = models.URLField(max_length=500)  
-    tipo_archivo = models.CharField(max_length=50)
-    cantidad_descargas = models.IntegerField(default=0)
+    tarea = models.ForeignKey(Task, related_name='archivos', on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"Archivo de {self.tarea.nombre}"
+        return self.nombre

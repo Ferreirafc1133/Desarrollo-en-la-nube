@@ -7,6 +7,7 @@ from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from django.contrib import messages  
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 
 
 # Ver lista de tareas
@@ -26,18 +27,19 @@ def create_task(request):
                 s3 = boto3.client('s3')
                 bucket_name = 'tareasextra'
                 file_name = archivo.name
+                fecha_subida = timezone.now().strftime('%Y%m%d_%H%M%S')
+                nombre_archivo = f"{file_name}_{fecha_subida}"
 
                 try:
-                    s3.upload_fileobj(archivo, bucket_name, file_name)
-
-                    file_url = f"https://{bucket_name}.s3.amazonaws.com/{file_name}"
+                    s3.upload_fileobj(archivo, bucket_name, nombre_archivo)
+                    file_url = f"https://{bucket_name}.s3.amazonaws.com/{nombre_archivo}"
 
                     task = form.save()
 
                     Archivo.objects.create(
                         tarea=task,
-                        url_archivo=file_url,
-                        tipo_archivo=archivo.content_type
+                        nombre=nombre_archivo,
+                        url_archivo=file_url
                     )
 
                     return JsonResponse({
@@ -55,7 +57,7 @@ def create_task(request):
             else:
                 return JsonResponse({
                     "success": False,
-                    "message": "No se recibió ningún archivo para subir."
+                    "message": "No se recibio ningun archivo para subir."
                 })
         else:
             return JsonResponse({
