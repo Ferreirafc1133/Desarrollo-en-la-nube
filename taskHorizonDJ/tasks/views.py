@@ -3,6 +3,7 @@ from .models import Task, Archivo
 from .forms import TaskForm
 import boto3
 from django.conf import settings
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
 
 # Ver lista de tareas
@@ -15,25 +16,39 @@ def create_task(request):
     if request.method == 'POST':
         form = TaskForm(request.POST, request.FILES)
         if form.is_valid():
-            task = form.save()
-            
+            task = form.save() 
             archivo = request.FILES.get('archivo')  
             if archivo:
                 s3 = boto3.client('s3')
+                
                 bucket_name = 'tareasextra'
                 file_name = archivo.name
                 
                 try:
                     s3.upload_fileobj(archivo, bucket_name, file_name)
+                    
                     file_url = f"https://{bucket_name}.s3.amazonaws.com/{file_name}"
-                    Archivo.objects.create(tarea=task, url_archivo=file_url, tipo_archivo=archivo.content_type)
+                    
+                    Archivo.objects.create(
+                        tarea=task, 
+                        url_archivo=file_url, 
+                        tipo_archivo=archivo.content_type
+                    )
+                except FileNotFoundError:
+                    print("El archivo no se encontró en el sistema local.")
+                except NoCredentialsError:
+                    print("Credenciales no disponibles.")
+                except PartialCredentialsError:
+                    print("Credenciales incompletas.")
                 except Exception as e:
-                    print(f"Error subiendo archivo: {e}")
+                    print(f"Error subiendo archivo a S3: {e}")
             
             return redirect('list_tasks')
     else:
-        form = TaskForm()
+        form = TaskForm()  
+    
     return render(request, 'task/create_task.html', {'form': form})
+
 
 # Actualizar tarea
 def update_task(request, task_id):
