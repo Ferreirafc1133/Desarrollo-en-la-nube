@@ -170,7 +170,7 @@ def delete_task(request, task_id):
     if request.method == 'DELETE':
         try:
             files_response = files_table.scan(
-                FilterExpression=Attr('task_id').eq(task_id)
+                FilterExpression=Attr('task_id').eq(str(task_id))
             )
             archivos = files_response.get('Items', [])
 
@@ -187,7 +187,7 @@ def delete_task(request, task_id):
                         })
 
             try:
-                tasks_table.delete_item(Key={'task_id': task_id})
+                tasks_table.delete_item(Key={'task_id': str(task_id)})
             except Exception as e:
                 return JsonResponse({
                     "success": False,
