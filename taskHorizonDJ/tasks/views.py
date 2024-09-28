@@ -173,17 +173,30 @@ def delete_task(request, task_id):
                 FilterExpression=Attr('task_id').eq(task_id)
             )
             archivos = files_response.get('Items', [])
-            
-            s3 = boto3.client('s3')
-            for archivo in archivos:
-                s3.delete_object(Bucket='tareasextra', Key=archivo['nombre_archivo'])
-                files_table.delete_item(Key={'archivo_id': archivo['archivo_id']})
-            
-            tasks_table.delete_item(Key={'task_id': task_id})
-            
+
+            if archivos:
+                s3 = boto3.client('s3')
+                for archivo in archivos:
+                    try:
+                        s3.delete_object(Bucket='tareasextra', Key=archivo['nombre_archivo'])
+                        files_table.delete_item(Key={'archivo_id': archivo['archivo_id']})
+                    except Exception as e:
+                        return JsonResponse({
+                            "success": False,
+                            "message": f"Error eliminando archivo de S3: {e}"
+                        })
+
+            try:
+                tasks_table.delete_item(Key={'task_id': task_id})
+            except Exception as e:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error eliminando tarea de DynamoDB: {e}"
+                })
+
             task_name = "nombre_tarea_eliminada"
             send_sns_notification(task_name, "eliminada")
-            
+
             return JsonResponse({
                 "success": True,
                 "message": "La tarea y sus archivos fueron eliminados correctamente."
@@ -192,13 +205,14 @@ def delete_task(request, task_id):
         except Exception as e:
             return JsonResponse({
                 "success": False,
-                "message": f"Error eliminando tarea o archivos: {e}"
+                "message": f"Error general durante la eliminación: {e}"
             })
     else:
         return JsonResponse({
             "success": False,
             "message": "Método no permitido. Usa DELETE."
         }, status=405)
+
 
 def send_sns_notification(task_name, action):
     sns = boto3.client('sns', region_name='us-east-1')
