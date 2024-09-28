@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Crear Tarea</title>
+    <title>Crear Nueva Tarea</title>
 </head>
 <body>
     <h1>Crear Nueva Tarea</h1>
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" action="{% url 'create_task' %}" enctype="multipart/form-data">
         {{ form.as_p }}
         <input type="file" name="archivo">
         <button type="submit">Crear</button>
-    </form>     
+    </form>
     <a href="{% url 'list_tasks' %}">Volver a la lista</a>
 </body>
 </html>
