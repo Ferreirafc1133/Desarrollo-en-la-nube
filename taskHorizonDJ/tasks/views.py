@@ -17,6 +17,7 @@ import json
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 tasks_table = dynamodb.Table('Tareas')
 files_table = dynamodb.Table('Archivos')
+s3 = boto3.client('s3', region_name='us-east-1')
 
 # Ver lista de tareas
 def list_tasks(request):
@@ -61,7 +62,7 @@ def create_task(request):
 
             for archivo in archivos:
                 if archivo.size <= 10 * 1024 * 1024:
-                    s3 = boto3.client('s3', region_name='us-east-1')
+                    s3 = boto3.client('s3')
                     bucket_name = 'tareasextra'
                     file_name = archivo.name
                     nombre_archivo = f"{file_name}_{fecha_subida}"
@@ -144,7 +145,6 @@ def update_task(request, task_id):
             has_updates = True
 
         if archivo:
-            s3 = boto3.client('s3', region_name='us-east-1')
             bucket_name = 'tareasextra'
             file_name = archivo.name
             fecha_subida = timezone.now().strftime('%Y%m%d_%H%M%S')
