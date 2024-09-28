@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import uuid 
+from boto3.dynamodb.conditions import Key
 
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
