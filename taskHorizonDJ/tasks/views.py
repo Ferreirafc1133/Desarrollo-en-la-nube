@@ -215,13 +215,14 @@ def delete_task(request, task_id):
 
 
 def send_sns_notification(task_name, action):
-    sns = boto3.client('sns', region_name='us-east-1')
+    sns = boto3.client('sns')
     message = f"La tarea '{task_name}' ha sido {action}."
+
     try:
         sns.publish(
-            TopicArn='arn:aws:sns:us-east-1:583004271855:Practica3:a50a0fe8-0ea0-4b50-81c8-f5a2da907d72',
-            Message=message,
-            PhoneNumber='+523320701024'
+            # TopicArn='arn:aws:sns:us-east-1:583004271855:Practica3:a50a0fe8-0ea0-4b50-81c8-f5a2da907d72',  # El TopicArn que estás usando
+            PhoneNumber='+523320701024',
+            Message=message
         )
     except Exception as e:
         print(f"Error enviando notificación SNS: {e}")
