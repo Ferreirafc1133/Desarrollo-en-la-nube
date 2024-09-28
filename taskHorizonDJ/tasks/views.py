@@ -167,7 +167,7 @@ def update_task(request, task_id):
 # Eliminar tarea
 @csrf_exempt
 def delete_task(request, task_id):
-    if request.method == 'POST':
+    if request.method == 'DELETE':
         try:
             files_response = files_table.scan(
                 FilterExpression=Attr('task_id').eq(task_id)
@@ -197,9 +197,8 @@ def delete_task(request, task_id):
     else:
         return JsonResponse({
             "success": False,
-            "message": "Método no permitido. Usa POST."
+            "message": "Método no permitido. Usa DELETE."
         }, status=405)
-
 
 def send_sns_notification(task_name, action):
     sns = boto3.client('sns', region_name='us-east-1')
