@@ -17,16 +17,11 @@ def create_task(request):
     if request.method == 'POST':
         form = TaskForm(request.POST, request.FILES)
         if form.is_valid():
-            task = form.save()
+            task = form.save()  
             
             archivo = request.FILES.get('archivo')  
             if archivo:
-                s3 = boto3.client(
-                    's3',
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
-                )
-                
+                s3 = boto3.client('s3')
                 bucket_name = 'tareasextra'
                 file_name = archivo.name
                 
@@ -66,6 +61,7 @@ def create_task(request):
         form = TaskForm()
     
     return render(request, 'task/create_task.html', {'form': form})
+
 
 # Actualizar tarea
 def update_task(request, task_id):
