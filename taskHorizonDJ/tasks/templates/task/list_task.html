@@ -21,7 +21,7 @@
                 <form action="{% url 'delete_task' task_with_files.task.task_id %}" method="POST" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit">Eliminar</button>
-                </form>
+                </form>                
             </li>
         {% endfor %}
     </ul>

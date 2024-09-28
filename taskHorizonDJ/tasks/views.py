@@ -65,7 +65,17 @@ def create_task(request):
                     nombre_archivo = f"{file_name}_{fecha_subida}"
                     
                     try:
-                        s3.upload_fileobj(archivo, bucket_name, nombre_archivo)
+                        s3.upload_fileobj(
+                            archivo,
+                            bucket_name,
+                            nombre_archivo,
+                            ExtraArgs={
+                                'Metadata': {
+                                    'x-amz-meta-tarea': task_id,
+                                    'x-amz-meta-cantidadDescargas': '0'
+                                }
+                            }
+                        )
                         file_url = f"https://{bucket_name}.s3.amazonaws.com/{nombre_archivo}"
                         archivo_id = str(uuid.uuid4())
 
@@ -76,7 +86,8 @@ def create_task(request):
                                 'nombre_archivo': nombre_archivo,
                                 'url_archivo': file_url,
                                 'tipo_archivo': archivo.content_type,
-                                'fecha_subida': fecha_subida
+                                'fecha_subida': fecha_subida,
+                                'cantidad_descargas': 0
                             }
                         )
 
@@ -108,45 +119,105 @@ def create_task(request):
             "message": "Método no permitido. Usa POST."
         }, status=405)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Actualizar tarea
 @csrf_exempt
 def update_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
     if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)
+        task_response = tasks_table.get_item(Key={'task_id': task_id})
+        task = task_response['Item']
+        
+        form = TaskForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('list_tasks')
-    else:
-        form = TaskForm(instance=task)
-    return render(request, 'task/update_task.html', {'form': form, 'task': task})
+            nombre_tarea = request.POST.get('nombre')
+            descripcion = request.POST.get('descripcion')
+            
+            try:
+                tasks_table.update_item(
+                    Key={'task_id': task_id},
+                    UpdateExpression="SET nombre_tarea = :n, descripcion = :d",
+                    ExpressionAttributeValues={
+                        ':n': nombre_tarea,
+                        ':d': descripcion
+                    }
+                )
+                
+                send_sns_notification(nombre_tarea, "actualizada")
+                
+                return JsonResponse({
+                    "success": True,
+                    "message": "La tarea fue actualizada correctamente."
+                })
+            except Exception as e:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error actualizando tarea en DynamoDB: {e}"
+                })
+
+        return JsonResponse({
+            "success": False,
+            "message": "Error al validar los datos del formulario.",
+            "errors": form.errors
+        })
+
+    return JsonResponse({
+        "success": False,
+        "message": "Método no permitido. Usa POST."
+    }, status=405)
 
 # Eliminar tarea
 @csrf_exempt
 def delete_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
     if request.method == 'POST':
-        task.delete()
-        return redirect('list_tasks')
-    return render(request, 'task/detail_task.html', {'task': task})
+        files_response = files_table.query(
+            IndexName='task_idIndex',
+            KeyConditionExpression=Key('task_id').eq(task_id)
+        )
+        archivos = files_response.get('Items', [])
+        
+        for archivo in archivos:
+            s3 = boto3.client('s3')
+            try:
+                s3.delete_object(Bucket='tareasextra', Key=archivo['nombre_archivo'])
+                files_table.delete_item(
+                    Key={'archivo_id': archivo['archivo_id']}
+                )
+            except Exception as e:
+                return JsonResponse({
+                    "success": False,
+                    "message": f"Error eliminando archivo de S3 o DynamoDB: {e}"
+                })
+
+        try:
+            task_response = tasks_table.get_item(Key={'task_id': task_id})
+            task_name = task_response['Item']['nombre_tarea']
+            tasks_table.delete_item(Key={'task_id': task_id})
+            
+            send_sns_notification(task_name, "eliminada")
+            
+            return JsonResponse({
+                "success": True,
+                "message": "La tarea y sus archivos fueron eliminados correctamente."
+            })
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "message": f"Error eliminando tarea de DynamoDB: {e}"
+            })
+
+    return JsonResponse({
+        "success": False,
+        "message": "Método no permitido. Usa POST."
+    }, status=405)
+
+
+def send_sns_notification(task_name, action):
+    sns = boto3.client('sns', region_name='us-east-1')
+    message = f"La tarea '{task_name}' ha sido {action}."
+    try:
+        sns.publish(
+            TopicArn='arn:aws:sns:us-east-1:583004271855:Practica3:a50a0fe8-0ea0-4b50-81c8-f5a2da907d72',
+            Message=message,
+            PhoneNumber='+523320701024'
+        )
+    except Exception as e:
+        print(f"Error enviando notificación SNS: {e}")
