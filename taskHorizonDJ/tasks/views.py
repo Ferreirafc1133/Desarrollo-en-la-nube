@@ -11,13 +11,12 @@ from django.utils import timezone
 import uuid 
 from boto3.dynamodb.conditions import Attr
 import json
-
-
-
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 tasks_table = dynamodb.Table('Tareas')
 files_table = dynamodb.Table('Archivos')
-s3 = boto3.client('s3', region_name='us-east-1')
+s3 = boto3.client('s3', region_name='us-east-1') 
+sns = boto3.client('sns', region_name='us-east-1')
+
 
 # Ver lista de tareas
 def list_tasks(request):
@@ -62,7 +61,6 @@ def create_task(request):
 
             for archivo in archivos:
                 if archivo.size <= 10 * 1024 * 1024:
-                    s3 = boto3.client('s3')
                     bucket_name = 'tareasextra'
                     file_name = archivo.name
                     nombre_archivo = f"{file_name}_{fecha_subida}"
@@ -220,7 +218,6 @@ def update_task(request, task_id):
             "message": "Método no permitido. Usa PUT."
         }, status=405)
 
-
 # Eliminar tarea
 @csrf_exempt
 def delete_task(request, task_id):
@@ -232,7 +229,6 @@ def delete_task(request, task_id):
             archivos = files_response.get('Items', [])
 
             if archivos:
-                s3 = boto3.client('s3', region_name='us-east-1')
                 for archivo in archivos:
                     try:
                         s3.delete_object(Bucket='tareasextra', Key=archivo['nombre_archivo'])
@@ -272,12 +268,10 @@ def delete_task(request, task_id):
 
 
 def send_sns_notification(task_name, action):
-    sns = boto3.client('sns')
     message = f"La tarea '{task_name}' ha sido {action}."
 
     try:
         sns.publish(
-            # TopicArn='arn:aws:sns:us-east-1:583004271855:Practica3:a50a0fe8-0ea0-4b50-81c8-f5a2da907d72',  # El TopicArn que estás usando
             PhoneNumber='+523320701024',
             Message=message
         )
