@@ -13,12 +13,6 @@ def list_tasks(request):
     return render(request, 'task/list_task.html', {'tasks': tasks})
 
 # Crear tarea
-import boto3
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError
-from django.http import JsonResponse
-from .models import Archivo
-
-# Crear tarea
 def create_task(request):
     if request.method == 'POST':
         form = TaskForm(request.POST, request.FILES)
