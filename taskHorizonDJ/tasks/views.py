@@ -277,3 +277,4 @@ def send_sns_notification(task_name, action):
         )
     except Exception as e:
         print(f"Error enviando notificación SNS: {e}")
+
