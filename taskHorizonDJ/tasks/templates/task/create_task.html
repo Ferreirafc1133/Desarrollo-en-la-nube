@@ -8,16 +8,14 @@
 <body>
     <h1>Crear Nueva Tarea</h1>
 
-    <!-- Formulario sin enviar directamente, lo manejamos con AJAX -->
     <form id="taskForm" enctype="multipart/form-data">
         {{ form.as_p }}
         <input type="file" name="archivo" id="archivo">
-        <button type="button" id="submitForm">Crear</button> <!-- Cambié el type a "button" -->
+        <button type="button" id="submitForm">Crear</button> 
     </form>
 
     <a href="{% url 'list_tasks' %}">Volver a la lista</a>
 
-    <!-- Script para manejar el envío AJAX -->
     <script>
         $(document).ready(function () {
             $('#submitForm').click(function () {
