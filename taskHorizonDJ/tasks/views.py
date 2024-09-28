@@ -8,7 +8,12 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+import uuid 
 
+
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+tasks_table = dynamodb.Table('Tareas')
+files_table = dynamodb.Table('Archivos')
 
 # Ver lista de tareas
 @csrf_exempt
@@ -34,30 +39,46 @@ def create_task(request):
                     s3.upload_fileobj(archivo, bucket_name, nombre_archivo)
                     file_url = f"https://{bucket_name}.s3.amazonaws.com/{nombre_archivo}"
 
-                    task = form.save()
+                    task_id = str(uuid.uuid4())
+                    archivo_id = str(uuid.uuid4())
 
-                    Archivo.objects.create(
-                        tarea=task,
-                        nombre=nombre_archivo,
-                        url_archivo=file_url
+                    tasks_table.put_item(
+                        Item={
+                            'task_id': task_id,
+                            'nombre_tarea': f"{file_name}_{fecha_subida}",
+                            'descripcion': request.POST.get('descripcion'),
+                            'fecha_creacion': fecha_subida
+                        }
+                    )
+
+                    files_table.put_item(
+                        Item={
+                            'archivo_id': archivo_id,
+                            'task_id': task_id,  
+                            'nombre_archivo': nombre_archivo,
+                            'url_archivo': file_url,
+                            'tipo_archivo': archivo.content_type,
+                            'fecha_subida': fecha_subida
+                        }
                     )
 
                     return JsonResponse({
                         "success": True,
                         "message": "La tarea y el archivo se han creado correctamente.",
                         "file_url": file_url,
-                        "task_id": task.id
+                        "task_id": task_id,
+                        "archivo_id": archivo_id
                     })
 
                 except Exception as e:
                     return JsonResponse({
                         "success": False,
-                        "message": f"Error subiendo archivo a S3: {e}"
+                        "message": f"Error subiendo archivo a S3 o DynamoDB: {e}"
                     })
             else:
                 return JsonResponse({
                     "success": False,
-                    "message": "No se recibio ningun archivo para subir."
+                    "message": "No se recibió ningún archivo para subir."
                 })
         else:
             return JsonResponse({
