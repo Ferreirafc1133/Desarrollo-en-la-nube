@@ -12,9 +12,9 @@
                 <a href="{% url 'update_task' task.id %}">{{ task.nombre }}</a> - {{ task.descripcion }}
                 
                 {% if task.archivos.all %}
-                    (
+                    ( 
                     {% for archivo in task.archivos.all %}
-                        <a href="{{ archivo.url_archivo }}" target="_blank">{{ archivo.archivo.name }}</a>{% if not forloop.last %}, {% endif %}
+                        <a href="{{ archivo.url_archivo }}" target="_blank">{{ archivo.tipo_archivo }}</a>{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                     )
                 {% endif %}
