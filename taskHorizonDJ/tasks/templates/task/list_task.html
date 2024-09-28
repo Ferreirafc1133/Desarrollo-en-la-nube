@@ -5,7 +5,7 @@
 </head>
 <body>
     <h1>Lista de Tareas</h1>
-    <a href="{% url 'create_task' %}">Crear Nueva Tarea</a>
+    <a href="javascript:void(0);" id="openCreateForm">Crear Nueva Tarea</a>
     <ul>
         {% for task in tasks %}
             <li>
