@@ -13,7 +13,7 @@
                 {% if task.archivos.all %}
                     ( 
                     {% for archivo in task.archivos.all %}
-                        <a href="{{ archivo.url_archivo }}" target="_blank">{{ archivo.tipo_archivo }}</a>{% if not forloop.last %}, {% endif %}
+                        <a href="{{ archivo.url_archivo }}" target="_blank">{{ archivo.nombre }}</a>{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                     )
                 {% endif %}
