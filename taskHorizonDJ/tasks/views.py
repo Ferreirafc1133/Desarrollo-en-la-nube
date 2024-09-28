@@ -5,7 +5,7 @@ import boto3
 from django.conf import settings
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from django.contrib import messages  
-
+from django.http import JsonResponse
 
 # Ver lista de tareas
 def list_tasks(request):
