@@ -47,24 +47,6 @@ def create_task(request):
                         "task_id": task.id
                     })
 
-                except FileNotFoundError:
-                    return JsonResponse({
-                        "success": False,
-                        "message": "El archivo no se encontró en el sistema local."
-                    })
-
-                except NoCredentialsError:
-                    return JsonResponse({
-                        "success": False,
-                        "message": "No se encontraron credenciales para subir el archivo a S3."
-                    })
-
-                except PartialCredentialsError:
-                    return JsonResponse({
-                        "success": False,
-                        "message": "Las credenciales para S3 están incompletas."
-                    })
-
                 except Exception as e:
                     return JsonResponse({
                         "success": False,
