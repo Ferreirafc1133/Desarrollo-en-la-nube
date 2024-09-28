@@ -6,13 +6,17 @@ from django.conf import settings
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from django.contrib import messages  
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
 
 # Ver lista de tareas
+@csrf_exempt
 def list_tasks(request):
     tasks = Task.objects.prefetch_related('archivos').all()
     return render(request, 'task/list_task.html', {'tasks': tasks})
 
 # Crear tarea
+@csrf_exempt
 def create_task(request):
     if request.method == 'POST':
         form = TaskForm(request.POST, request.FILES)
@@ -85,6 +89,7 @@ def create_task(request):
 
 
 # Actualizar tarea
+@csrf_exempt
 def update_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     if request.method == 'POST':
@@ -97,6 +102,7 @@ def update_task(request, task_id):
     return render(request, 'task/update_task.html', {'form': form, 'task': task})
 
 # Eliminar tarea
+@csrf_exempt
 def delete_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     if request.method == 'POST':
