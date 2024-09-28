@@ -18,8 +18,24 @@ files_table = dynamodb.Table('Archivos')
 # Ver lista de tareas
 @csrf_exempt
 def list_tasks(request):
-    tasks = Task.objects.prefetch_related('archivos').all()
-    return render(request, 'task/list_task.html', {'tasks': tasks})
+    tasks_response = tasks_table.scan()
+    tasks = tasks_response.get('Items', [])
+
+    tasks_with_files = []
+
+    for task in tasks:
+        task_id = task['task_id']
+        files_response = files_table.query(
+            IndexName='task_idIndex', 
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('task_id').eq(task_id)
+        )
+        archivos = files_response.get('Items', [])
+        tasks_with_files.append({
+            'task': task,
+            'archivos': archivos
+        })
+
+    return render(request, 'task/list_task.html', {'tasks_with_files': tasks_with_files})
 
 # Crear tarea
 @csrf_exempt
