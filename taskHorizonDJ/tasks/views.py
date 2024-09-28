@@ -266,14 +266,25 @@ def delete_task(request, task_id):
         }, status=405)
 
 
-def send_sns_notification(task_name, action):
+def send_sns_notification(task_name, action, use_phone=True):
+    sns = boto3.client('sns', region_name='us-east-1')
     message = f"La tarea '{task_name}' ha sido {action}."
-
+    
     try:
-        sns.publish(
-            PhoneNumber='+523320701024',
-            Message=message
-        )
+        if use_phone:
+            response = sns.publish(
+                PhoneNumber='+523320701024',
+                Message=message
+            )
+        else:
+            response = sns.publish(
+                TopicArn='arn:aws:sns:us-east-1:583004271855:Practica3',
+                Message=message
+            )
+        
+        print(f"Notificación enviada exitosamente: {response}")
+
+    except sns.exceptions.InvalidParameterException as e:
+        print(f"Error: Parámetro inválido en SNS: {e}")
     except Exception as e:
         print(f"Error enviando notificación SNS: {e}")
-
