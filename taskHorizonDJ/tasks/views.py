@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import uuid 
 from boto3.dynamodb.conditions import Attr
+import json
 
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -122,15 +123,14 @@ def create_task(request):
 # Actualizar tarea
 @csrf_exempt
 def update_task(request, task_id):
-    if request.method == 'POST':
-        task_response = tasks_table.get_item(Key={'task_id': task_id})
-        task = task_response['Item']
+    if request.method == 'PUT':
+        body_unicode = request.body.decode('utf-8')
+        put_data = json.loads(body_unicode)
         
-        form = TaskForm(request.POST)
-        if form.is_valid():
-            nombre_tarea = request.POST.get('nombre')
-            descripcion = request.POST.get('descripcion')
-            
+        nombre_tarea = put_data.get('nombre')
+        descripcion = put_data.get('descripcion')
+
+        if nombre_tarea and descripcion:
             try:
                 tasks_table.update_item(
                     Key={'task_id': task_id},
@@ -140,74 +140,66 @@ def update_task(request, task_id):
                         ':d': descripcion
                     }
                 )
-                
+
                 send_sns_notification(nombre_tarea, "actualizada")
-                
+
                 return JsonResponse({
                     "success": True,
                     "message": "La tarea fue actualizada correctamente."
                 })
+
             except Exception as e:
                 return JsonResponse({
                     "success": False,
                     "message": f"Error actualizando tarea en DynamoDB: {e}"
                 })
 
-        return JsonResponse({
-            "success": False,
-            "message": "Error al validar los datos del formulario.",
-            "errors": form.errors
-        })
+        else:
+            return JsonResponse({
+                "success": False,
+                "message": "Faltan campos en la solicitud PUT."
+            })
 
     return JsonResponse({
         "success": False,
-        "message": "Método no permitido. Usa POST."
+        "message": "Método no permitido. Usa PUT."
     }, status=405)
 
 # Eliminar tarea
 @csrf_exempt
 def delete_task(request, task_id):
-    if request.method == 'POST':
-        files_response = files_table.query(
-            IndexName='task_idIndex',
-            KeyConditionExpression=Key('task_id').eq(task_id)
-        )
-        archivos = files_response.get('Items', [])
-        
-        for archivo in archivos:
-            s3 = boto3.client('s3')
-            try:
-                s3.delete_object(Bucket='tareasextra', Key=archivo['nombre_archivo'])
-                files_table.delete_item(
-                    Key={'archivo_id': archivo['archivo_id']}
-                )
-            except Exception as e:
-                return JsonResponse({
-                    "success": False,
-                    "message": f"Error eliminando archivo de S3 o DynamoDB: {e}"
-                })
-
+    if request.method == 'DELETE':
         try:
-            task_response = tasks_table.get_item(Key={'task_id': task_id})
-            task_name = task_response['Item']['nombre_tarea']
+            files_response = files_table.scan(
+                FilterExpression=Attr('task_id').eq(task_id)
+            )
+            archivos = files_response.get('Items', [])
+            
+            s3 = boto3.client('s3')
+            for archivo in archivos:
+                s3.delete_object(Bucket='tareasextra', Key=archivo['nombre_archivo'])
+                files_table.delete_item(Key={'archivo_id': archivo['archivo_id']})
+            
             tasks_table.delete_item(Key={'task_id': task_id})
             
+            task_name = "nombre_tarea_eliminada"
             send_sns_notification(task_name, "eliminada")
             
             return JsonResponse({
                 "success": True,
                 "message": "La tarea y sus archivos fueron eliminados correctamente."
             })
+
         except Exception as e:
             return JsonResponse({
                 "success": False,
-                "message": f"Error eliminando tarea de DynamoDB: {e}"
+                "message": f"Error eliminando tarea o archivos: {e}"
             })
-
-    return JsonResponse({
-        "success": False,
-        "message": "Método no permitido. Usa POST."
-    }, status=405)
+    else:
+        return JsonResponse({
+            "success": False,
+            "message": "Método no permitido. Usa DELETE."
+        }, status=405)
 
 
 def send_sns_notification(task_name, action):
