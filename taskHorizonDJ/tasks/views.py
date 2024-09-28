@@ -123,7 +123,7 @@ def create_task(request):
 # Actualizar tarea
 @csrf_exempt
 def update_task(request, task_id):
-    if request.method == 'POST': 
+    if request.method == 'POST':  
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion')
         archivo = request.FILES.get('archivo')
@@ -149,13 +149,14 @@ def update_task(request, task_id):
             nombre_archivo = f"{file_name}_{fecha_subida}"
 
             try:
+                # Subir el archivo a S3
                 s3.upload_fileobj(
                     archivo,
                     bucket_name,
                     nombre_archivo,
                     ExtraArgs={
                         'Metadata': {
-                            'x-amz-meta-tarea': task_id,
+                            'x-amz-meta-tarea': str(task_id),  
                             'x-amz-meta-cantidadDescargas': '0'
                         }
                     }
@@ -165,8 +166,8 @@ def update_task(request, task_id):
                 archivo_id = str(uuid.uuid4())
                 files_table.put_item(
                     Item={
-                        'archivo_id': str(archivo_id),
-                        'task_id': str(task_id),
+                        'archivo_id': archivo_id, 
+                        'task_id': str(task_id), 
                         'nombre_archivo': nombre_archivo,
                         'url_archivo': file_url,
                         'tipo_archivo': archivo.content_type,
@@ -193,7 +194,7 @@ def update_task(request, task_id):
                     )
 
                 task_name = nombre if nombre else "Tarea actualizada"
-                send_sns_notification(task_name, "actualizada")
+                send_sns_notification(task_name, "actualizada")  
 
                 return JsonResponse({
                     "success": True,
