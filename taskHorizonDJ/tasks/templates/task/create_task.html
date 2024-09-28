@@ -2,14 +2,49 @@
 <html>
 <head>
     <title>Crear Nueva Tarea</title>
+    <!-- Incluye jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
     <h1>Crear Nueva Tarea</h1>
-    <form method="POST" action="{% url 'create_task' %}" enctype="multipart/form-data">
+
+    <!-- Formulario sin enviar directamente, lo manejamos con AJAX -->
+    <form id="taskForm" enctype="multipart/form-data">
         {{ form.as_p }}
-        <input type="file" name="archivo">
-        <button type="submit">Crear</button>
+        <input type="file" name="archivo" id="archivo">
+        <button type="button" id="submitForm">Crear</button> <!-- Cambié el type a "button" -->
     </form>
+
     <a href="{% url 'list_tasks' %}">Volver a la lista</a>
+
+    <!-- Script para manejar el envío AJAX -->
+    <script>
+        $(document).ready(function () {
+            $('#submitForm').click(function () {
+                // Crear un objeto FormData para enviar el archivo
+                var formData = new FormData($('#taskForm')[0]);
+
+                $.ajax({
+                    url: "{% url 'create_task' %}", 
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false, 
+                    success: function (response) {
+                        if (response.success) {
+                            alert("Tarea creada con éxito: " + response.message);
+                            window.location.href = "{% url 'list_tasks' %}";  
+                        } else {
+                            alert("Error: " + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert("Ocurrió un error en la solicitud: " + error);
+                    }
+                });
+            });
+        });
+    </script>
+
 </body>
 </html>
