@@ -11,6 +11,9 @@ from django.utils import timezone
 import uuid 
 from boto3.dynamodb.conditions import Attr
 import json
+from datetime import timedelta
+import requests
+
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 tasks_table = dynamodb.Table('Tareas')
 files_table = dynamodb.Table('Archivos')
@@ -288,3 +291,39 @@ def send_sns_notification(task_name, action, use_phone=True):
         print(f"Error: Parámetro inválido en SNS: {e}")
     except Exception as e:
         print(f"Error enviando notificación SNS: {e}")
+
+
+
+def delete_old_tasks():
+    time_limit = timezone.now() - timedelta(days=30)
+
+    tasks_response = tasks_table.scan()
+    tasks = tasks_response.get('Items', [])
+
+    for task in tasks:
+        fecha_creacion = task.get('fecha_creacion')
+        if fecha_creacion and fecha_creacion < time_limit.strftime('%Y%m%d_%H%M%S'):
+            task_id = task['task_id']
+            try:
+                files_response = files_table.scan(
+                    FilterExpression=Attr('task_id').eq(str(task_id))
+                )
+                archivos = files_response.get('Items', [])
+
+                if archivos:
+                    for archivo in archivos:
+                        try:
+                            s3.delete_object(Bucket='tareasextra', Key=archivo['nombre_archivo'])
+                            files_table.delete_item(Key={'archivo_id': archivo['archivo_id']})
+                        except Exception as e:
+                            print(f"Error eliminando archivo {archivo['archivo_id']} de S3/DynamoDB: {e}")
+                
+                tasks_table.delete_item(Key={'task_id': str(task_id)})
+
+                task_name = task.get('nombre_tarea', 'Tarea eliminada')
+                send_sns_notification(task_name, "eliminada")
+
+                print(f"Tarea {task_id} eliminada correctamente.")
+            
+            except Exception as e:
+                print(f"Error eliminando la tarea {task_id}: {e}")
