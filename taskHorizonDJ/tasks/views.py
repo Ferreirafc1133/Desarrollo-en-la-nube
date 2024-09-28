@@ -5,12 +5,13 @@ import boto3
 from django.conf import settings
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from django.contrib import messages  
-from django.http import JsonResponse
+from django.http import JsonResponse, QueryDict
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import uuid 
 from boto3.dynamodb.conditions import Attr
 import json
+
 
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -124,11 +125,9 @@ def create_task(request):
 @csrf_exempt
 def update_task(request, task_id):
     if request.method == 'PUT':
-        body_unicode = request.body.decode('utf-8')
-        put_data = json.loads(body_unicode)
-        
-        nombre_tarea = put_data.get('nombre')
-        descripcion = put_data.get('descripcion')
+        request.PUT = QueryDict(request.body)
+        nombre_tarea = request.PUT.get('nombre')
+        descripcion = request.PUT.get('descripcion')
 
         if nombre_tarea and descripcion:
             try:
@@ -141,6 +140,7 @@ def update_task(request, task_id):
                     }
                 )
 
+                # Notificar sobre la actualización
                 send_sns_notification(nombre_tarea, "actualizada")
 
                 return JsonResponse({
@@ -153,11 +153,10 @@ def update_task(request, task_id):
                     "success": False,
                     "message": f"Error actualizando tarea en DynamoDB: {e}"
                 })
-
         else:
             return JsonResponse({
                 "success": False,
-                "message": "Faltan campos en la solicitud PUT."
+                "message": "Faltan campos en la solicitud."
             })
 
     return JsonResponse({
@@ -168,7 +167,7 @@ def update_task(request, task_id):
 # Eliminar tarea
 @csrf_exempt
 def delete_task(request, task_id):
-    if request.method == 'DELETE':
+    if request.method == 'POST':
         try:
             files_response = files_table.scan(
                 FilterExpression=Attr('task_id').eq(task_id)
@@ -198,7 +197,7 @@ def delete_task(request, task_id):
     else:
         return JsonResponse({
             "success": False,
-            "message": "Método no permitido. Usa DELETE."
+            "message": "Método no permitido. Usa POST."
         }, status=405)
 
 
