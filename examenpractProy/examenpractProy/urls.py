@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include 
 from examenpractApp  import views_clientes
 
 print("Cargando el archivo urls.py")
