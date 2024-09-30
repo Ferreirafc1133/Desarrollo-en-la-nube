@@ -12,7 +12,7 @@ class DomicilioSerializer(serializers.Serializer):
     colonia = serializers.CharField(max_length=255)
     municipio = serializers.CharField(max_length=255)
     estado = serializers.CharField(max_length=255)
-    tipo_direccion = serializers.ChoiceField(choices=['FACTURACIÓN', 'ENVÍO'])
+    tipo_direccion = serializers.ChoiceField(choices=['FACTURACION', 'ENVIO'])
 
 class ProductoSerializer(serializers.Serializer):
     ID = serializers.CharField(max_length=100, required=False)
