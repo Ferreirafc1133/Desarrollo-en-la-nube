@@ -1,5 +1,5 @@
 from django.urls import path, include 
-from examenpractApp  import views_clientes, views_dom, views_prod
+from examenpractApp  import views_clientes, views_dom, views_prod, views_notas_ven
 
 print("Cargando el archivo urls.py")
 
@@ -22,6 +22,8 @@ urlpatterns = [
     path('productos/<str:id>/', views_prod.producto_detail, name='producto_detail'),
     path('productos/<str:id>/editar/', views_prod.producto_update, name='producto_update'),
     path('productos/<str:id>/eliminar/', views_prod.producto_delete, name='producto_delete'),
+    # ruta final
+    path('notas-venta/crear/', views_notas_ven.crear_nota_venta_completa, name='crear_nota_venta_completa'),
 ]
 
 print("Rutas cargadas:", urlpatterns)
