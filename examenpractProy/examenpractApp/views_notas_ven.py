@@ -108,11 +108,12 @@ def enviar_correo_cliente(email, mensaje, asunto):
 
 def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_envio_id):
     cliente = buscar_cliente(cliente_id)
-    direccion_facturacion = buscar_domicilio(direccion_facturacion_id)
-    direccion_envio = buscar_domicilio(direccion_envio_id)
+    domicilios = buscar_domicilios(direccion_facturacion_id, direccion_envio_id)
+    if 'error' in domicilios:
+        return Response({"error": domicilios['error']}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not cliente or not direccion_facturacion or not direccion_envio:
-        return Response({"error": "No se pudo encontrar la información necesaria"}, status=status.HTTP_400_BAD_REQUEST)
+    if not cliente:
+        return Response({"error": "No se pudo encontrar la información del cliente"}, status=status.HTTP_400_BAD_REQUEST)
 
     nota_venta_id = str(uuid.uuid4())
     nota_venta_data = {
@@ -125,7 +126,7 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
     table_notas.put_item(Item=nota_venta_data)
 
     for producto in productos:
-        producto_info = buscar_producto(producto['ProductoID'])
+        producto_info = buscar_productos(producto['ProductoID'])
         if not producto_info:
             continue
 
@@ -141,8 +142,8 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
 
     data_para_pdf = {
         "Cliente": cliente,
-        "DireccionFacturacion": direccion_facturacion,
-        "DireccionEnvio": direccion_envio,
+        "DireccionFacturacion": domicilios['DireccionFacturacion'],
+        "DireccionEnvio": domicilios['DireccionEnvio'],
         "Productos": productos,
         "Total": nota_venta_data['Total']
     }
