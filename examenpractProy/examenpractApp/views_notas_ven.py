@@ -110,56 +110,56 @@ def enviar_correo_cliente(email, mensaje, asunto):
 def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_envio_id):
     cliente = buscar_cliente(cliente_id)
     domicilios = buscar_domicilios(direccion_facturacion_id, direccion_envio_id)
-    if 'error' in domicilios:
-        return Response({"error": domicilios['error']}, status=status.HTTP_400_BAD_REQUEST)
-
-    if not cliente:
-        return Response({"error": "No se pudo encontrar la información del cliente"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not cliente or 'error' in domicilios:
+        return Response({"error": "No se pudo encontrar la información necesaria"}, status=status.HTTP_400_BAD_REQUEST)
 
     nota_venta_id = str(uuid.uuid4())
-    nota_venta_data = {
-        "ID": nota_venta_id,
-        "Cliente": cliente_id,
-        "DireccionFacturacion": direccion_facturacion_id,
-        "DireccionEnvio": direccion_envio_id,
-        "Total": sum([producto['Cantidad'] * producto['PrecioUnitario'] for producto in productos])
-    }
-    table_notas.put_item(Item=nota_venta_data)
-
+    total = 0
     for producto in productos:
         producto_info = buscar_productos(producto['ProductoID'])
         if not producto_info:
             continue
+        
+        precio_unitario = producto_info['precio_base']
+        importe = producto['Cantidad'] * precio_unitario
+        total += importe
 
         contenido_nota_data = {
             "ID": str(uuid.uuid4()),
             "NotaID": nota_venta_id,
             "ProductoID": producto['ProductoID'],
             "Cantidad": producto['Cantidad'],
-            "PrecioUnitario": producto['PrecioUnitario'],
-            "Importe": producto['Cantidad'] * producto['PrecioUnitario']
+            "PrecioUnitario": precio_unitario,
+            "Importe": importe
         }
         table_contenido.put_item(Item=contenido_nota_data)
+
+    nota_venta_data = {
+        "ID": nota_venta_id,
+        "Cliente": cliente_id,
+        "DireccionFacturacion": direccion_facturacion_id,
+        "DireccionEnvio": direccion_envio_id,
+        "Total": total
+    }
+    table_notas.put_item(Item=nota_venta_data)
 
     data_para_pdf = {
         "Cliente": cliente,
         "DireccionFacturacion": domicilios['DireccionFacturacion'],
         "DireccionEnvio": domicilios['DireccionEnvio'],
         "Productos": productos,
-        "Total": nota_venta_data['Total']
+        "Total": total
     }
 
-    # Generar PDF
     pdf_file = generar_pdf(data_para_pdf)
 
-    # Subir a S3
     file_name = f"nota_venta_{nota_venta_id}.pdf"
     pdf_url = subir_pdf_a_s3(pdf_file, 'examenpract', file_name)
 
     if not pdf_url:
         return Response({"error": "Error al subir el PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # Enviar correo
     mensaje = f"Se ha generado una nueva nota de venta. Puedes descargarla aquí: {pdf_url}"
     enviar_correo_cliente(cliente['correo_electronico'], mensaje, "Nota de Venta Generada")
 
