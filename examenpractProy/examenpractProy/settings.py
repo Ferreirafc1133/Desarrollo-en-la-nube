@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import boto3
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'examenpractApp',
 ]
 
 MIDDLEWARE = [
@@ -121,3 +124,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# dynamodb = boto3.resource(
+#     'dynamodb',
+#     region_name='us-east-1',
+#     aws_access_key_id='',
+#     aws_secret_access_key=''
+# )
+
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
