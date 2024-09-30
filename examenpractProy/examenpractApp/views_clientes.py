@@ -78,7 +78,7 @@ def cliente_delete(request, id):
     cliente = response.get('Item')
 
     if not cliente:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response({"message": "Cliente no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
     table.delete_item(Key={'ID': id})
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response({"message": "Cliente eliminado correctamente."}, status=status.HTTP_204_NO_CONTENT)
