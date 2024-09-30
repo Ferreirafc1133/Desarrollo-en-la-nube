@@ -22,7 +22,7 @@ def cliente_create(request):
     serializer = ClienteSerializer(data=request.data)
     if serializer.is_valid():
         cliente_data = serializer.validated_data
-        cliente_data['ID'] = str(uuid.uuid4())  # Generar un ID único
+        cliente_data['ID'] = str(uuid.uuid4())
         table.put_item(Item=cliente_data)
         return Response(cliente_data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
