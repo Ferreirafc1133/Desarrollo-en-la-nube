@@ -49,13 +49,26 @@ def cliente_update(request, id):
     if not cliente:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    serializer = ClienteSerializer(data=request.data)
+    serializer = ClienteSerializer(data=request.data, partial=True) 
     if serializer.is_valid():
         cliente_data = serializer.validated_data
-        cliente_data['ID'] = id
-        table.put_item(Item=cliente_data)  # Sobrescribir el cliente existente
+
+        update_expression = "SET "
+        expression_attribute_values = {}
+        for key, value in cliente_data.items():
+            update_expression += f"{key} = :{key}, "
+            expression_attribute_values[f":{key}"] = value
+        
+        update_expression = update_expression.rstrip(', ')
+
+        table.update_item(
+            Key={'ID': id},
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values
+        )
+
         return Response(cliente_data)
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Eliminar un cliente
