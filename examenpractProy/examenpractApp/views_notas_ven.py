@@ -11,8 +11,9 @@ from rest_framework.decorators import api_view
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table_notas = dynamodb.Table('NotasDeVenta')
 table_contenido = dynamodb.Table('ContenidoNotasDeVenta')
-s3 = boto3.client('s3')
-sns = boto3.client('sns')
+s3 = boto3.client('s3', region_name='us-east-1')
+sns = boto3.client('sns', region_name='us-east-1')
+
 
 
 @api_view(['POST'])
