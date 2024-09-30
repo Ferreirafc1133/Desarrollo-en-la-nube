@@ -4,8 +4,9 @@ from rest_framework import status
 from django.conf import settings  # Para acceder a la configuración de boto3
 from .serializers import ClienteSerializer
 import uuid
+import boto3
 
-dynamodb = settings.dynamodb
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('Clientes')
 
 # Listar todos los clientes

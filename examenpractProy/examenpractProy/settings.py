@@ -125,11 +125,3 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-dynamodb = boto3.resource(
-    'dynamodb',
-    region_name='us-east-1',
-    aws_access_key_id='ASIAYPPODGTXXRJDS5OR',
-    aws_secret_access_key='jQbb7WC9ISPijfxHDrgdZIqhj1zr+04zXqvRieUh'
-)
-
-# dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
