@@ -152,7 +152,7 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
 
     # Subir a S3
     file_name = f"nota_venta_{nota_venta_id}.pdf"
-    pdf_url = subir_pdf_a_s3(pdf_file, 'tu-bucket-de-s3', file_name)
+    pdf_url = subir_pdf_a_s3(pdf_file, 'examenpract', file_name)
 
     if not pdf_url:
         return Response({"error": "Error al subir el PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
