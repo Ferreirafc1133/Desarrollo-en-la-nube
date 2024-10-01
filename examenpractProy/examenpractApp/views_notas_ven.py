@@ -1,6 +1,6 @@
 import boto3
 import uuid
-import pdfkit
+from weasyprint import HTML
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import NotaVentaSerializer, ContenidoNotaVentaSerializer
@@ -76,7 +76,7 @@ def generar_pdf(data):
         pdf_content += f"<li>{producto['nombre']} - {producto['Cantidad']} x ${producto['PrecioUnitario']} = ${producto['Importe']}</li>"
     pdf_content += f"</ul><p>Total: {data['Total']}</p>"
 
-    pdf_file = pdfkit.from_string(pdf_content, False)
+    pdf_file = HTML(string=pdf_content).write_pdf()
     return pdf_file
 
 
