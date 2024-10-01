@@ -55,7 +55,7 @@ def buscar_domicilios(facturacion_id, envio_id):
         return {"error": "La dirección de facturación no es correcta"}
     
     if direccion_envio and direccion_envio['tipo_direccion'] != 'ENVIO':
-        return {"error": "La dirección de envío no es correcta"}
+        return {"error": "La dirección de envio no es correcta"}
 
     return {
         "DireccionFacturacion": direccion_facturacion,
@@ -116,25 +116,33 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
 
     nota_venta_id = str(uuid.uuid4())
     total = 0
+    productos_con_detalle = []  
     
-    productos_info = buscar_productos([producto['ProductoID'] for producto in productos])
-    if not productos_info:
-        return Response({"error": "Productos no encontrados"}, status=status.HTTP_400_BAD_REQUEST)
-
-    for producto, producto_info in zip(productos, productos_info):
+    for producto in productos:
+        producto_info = buscar_productos([producto['ProductoID']])[0] 
+        if not producto_info:
+            print(f"Producto con ID {producto['ProductoID']} no encontrado.")
+            continue
+        
         precio_unitario = producto_info['precio_base']
-        importe = producto['Cantidad'] * precio_unitario
+        cantidad = producto['Cantidad']
+        importe = cantidad * precio_unitario
         total += importe
 
         contenido_nota_data = {
             "ID": str(uuid.uuid4()),
             "NotaID": nota_venta_id,
             "ProductoID": producto['ProductoID'],
-            "Cantidad": producto['Cantidad'],
+            "Cantidad": cantidad,
             "PrecioUnitario": precio_unitario,
             "Importe": importe
         }
         table_contenido.put_item(Item=contenido_nota_data)
+
+        producto_info['Cantidad'] = cantidad
+        producto_info['PrecioUnitario'] = precio_unitario
+        producto_info['Importe'] = importe
+        productos_con_detalle.append(producto_info)
 
     nota_venta_data = {
         "ID": nota_venta_id,
@@ -149,7 +157,7 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
         "Cliente": cliente,
         "DireccionFacturacion": domicilios['DireccionFacturacion'],
         "DireccionEnvio": domicilios['DireccionEnvio'],
-        "Productos": productos_info,
+        "Productos": productos_con_detalle,
         "Total": total
     }
 
@@ -162,7 +170,7 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
         print("Error al subir el PDF a S3")
         return Response({"error": "Error al subir el PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    mensaje = f"Se ha generado una nueva nota de venta. Puedes descargarla aqui: {pdf_url}"
+    mensaje = f"Se ha generado una nueva nota de venta. Puedes descargarla aquí: {pdf_url}"
     enviar_correo_cliente(cliente['correo_electronico'], mensaje, "Nota de Venta Generada")
 
     return Response({
