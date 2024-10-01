@@ -6,6 +6,8 @@ from rest_framework import status
 from .serializers import NotaVentaSerializer, ContenidoNotaVentaSerializer
 from django.conf import settings
 from rest_framework.decorators import api_view
+from io import BytesIO
+
 
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -62,7 +64,6 @@ def buscar_domicilios(facturacion_id, envio_id):
         "DireccionEnvio": direccion_envio
     }
 
-
 def generar_pdf(data):
     pdf_content = f"""
     <h1>Nota de Venta</h1>
@@ -76,9 +77,8 @@ def generar_pdf(data):
         pdf_content += f"<li>{producto['nombre']} - {producto['Cantidad']} x ${producto['PrecioUnitario']} = ${producto['Importe']}</li>"
     pdf_content += f"</ul><p>Total: {data['Total']}</p>"
 
-    pdf_file = HTML(string=pdf_content).write_pdf()
-    return pdf_file
-
+    pdf = HTML(string=pdf_content).write_pdf()
+    return BytesIO(pdf)
 
 def subir_pdf_a_s3(pdf_file, bucket_name, file_name):
     try:
@@ -88,7 +88,6 @@ def subir_pdf_a_s3(pdf_file, bucket_name, file_name):
     except Exception as e:
         print(f"Error al subir el archivo: {e}")
         return None
-
 
 def enviar_correo_cliente(email, mensaje, asunto):
     try:
