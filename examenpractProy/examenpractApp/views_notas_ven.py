@@ -34,17 +34,12 @@ def buscar_cliente(cliente_id):
 
 # buscar producto
 def buscar_productos(productos_ids):
-    productos = []
     for producto_id in productos_ids:
         response = dynamodb.Table('Productos').get_item(Key={'ID': producto_id})
         producto = response.get('Item', None)
         if producto:
-            productos.append(producto)
-    
-    if not productos:
-        return {"error": "No se encontraron productos"}
-
-    return productos
+            return producto
+    return None
 
 # buscar domicilio
 def buscar_domicilios(facturacion_id, envio_id):
