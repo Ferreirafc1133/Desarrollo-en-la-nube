@@ -109,16 +109,22 @@ def enviar_correo_cliente(email, mensaje, asunto):
 
 def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_envio_id):
     cliente = buscar_cliente(cliente_id)
-    domicilios = buscar_domicilios(direccion_facturacion_id, direccion_envio_id)
+    if not cliente:
+        print(f"Cliente con ID {cliente_id} no encontrado.")
+        return Response({"error": "Cliente no encontrado"}, status=status.HTTP_400_BAD_REQUEST)
     
-    if not cliente or 'error' in domicilios:
-        return Response({"error": "No se pudo encontrar la información necesaria"}, status=status.HTTP_400_BAD_REQUEST)
+    domicilios = buscar_domicilios(direccion_facturacion_id, direccion_envio_id)
+    if 'error' in domicilios:
+        print(f"Error en domicilios: {domicilios['error']}")
+        return Response({"error": domicilios['error']}, status=status.HTTP_400_BAD_REQUEST)
 
     nota_venta_id = str(uuid.uuid4())
     total = 0
+    
     for producto in productos:
         producto_info = buscar_productos(producto['ProductoID'])
         if not producto_info:
+            print(f"Producto con ID {producto['ProductoID']} no encontrado.")
             continue
         
         precio_unitario = producto_info['precio_base']
@@ -158,6 +164,7 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
     pdf_url = subir_pdf_a_s3(pdf_file, 'examenpract', file_name)
 
     if not pdf_url:
+        print("Error al subir el PDF a S3")
         return Response({"error": "Error al subir el PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     mensaje = f"Se ha generado una nueva nota de venta. Puedes descargarla aquí: {pdf_url}"
