@@ -4,7 +4,7 @@ import pdfkit
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import NotaVentaSerializer, ContenidoNotaVentaSerializer
-from django.conf import settings 
+from django.conf import settings
 from rest_framework.decorators import api_view
 
 
@@ -15,33 +15,30 @@ s3 = boto3.client('s3', region_name='us-east-1')
 sns = boto3.client('sns', region_name='us-east-1')
 
 
-
 @api_view(['POST'])
 def crear_nota_venta_completa(request):
-    # Recibir los datos del body de la solicitud
     cliente_id = request.data.get('cliente_id')
     productos = request.data.get('productos')
     direccion_facturacion_id = request.data.get('facturacion_id')
     direccion_envio_id = request.data.get('envio_id')
-
-    # Llamar a la función para manejar la lógica de la creación de la nota de venta
     return crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_envio_id)
 
-# buscar cliente
+
 def buscar_cliente(cliente_id):
     response = dynamodb.Table('Clientes').get_item(Key={'ID': cliente_id})
     return response.get('Item', None)
 
-# buscar producto
+
 def buscar_productos(productos_ids):
+    productos = []
     for producto_id in productos_ids:
         response = dynamodb.Table('Productos').get_item(Key={'ID': producto_id})
         producto = response.get('Item', None)
         if producto:
-            return producto
-    return None
+            productos.append(producto)
+    return productos
 
-# buscar domicilio
+
 def buscar_domicilios(facturacion_id, envio_id):
     response_facturacion = dynamodb.Table('Domicilios').get_item(Key={'ID': facturacion_id})
     direccion_facturacion = response_facturacion.get('Item', None)
@@ -49,10 +46,10 @@ def buscar_domicilios(facturacion_id, envio_id):
     response_envio = dynamodb.Table('Domicilios').get_item(Key={'ID': envio_id})
     direccion_envio = response_envio.get('Item', None)
 
-    if direccion_facturacion and direccion_facturacion['tipo_direccion'] != 'FACTURACIÓN':
+    if direccion_facturacion and direccion_facturacion['tipo_direccion'] != 'FACTURACION':
         return {"error": "La dirección de facturación no es correcta"}
     
-    if direccion_envio and direccion_envio['tipo_direccion'] != 'ENVÍO':
+    if direccion_envio and direccion_envio['tipo_direccion'] != 'ENVIO':
         return {"error": "La dirección de envío no es correcta"}
 
     return {
@@ -61,7 +58,6 @@ def buscar_domicilios(facturacion_id, envio_id):
     }
 
 
-# generar PDF
 def generar_pdf(data):
     pdf_content = f"""
     <h1>Nota de Venta</h1>
@@ -78,7 +74,7 @@ def generar_pdf(data):
     pdf_file = pdfkit.from_string(pdf_content, False)
     return pdf_file
 
-# subir a S3
+
 def subir_pdf_a_s3(pdf_file, bucket_name, file_name):
     try:
         s3.upload_fileobj(pdf_file, bucket_name, file_name)
@@ -88,7 +84,7 @@ def subir_pdf_a_s3(pdf_file, bucket_name, file_name):
         print(f"Error al subir el archivo: {e}")
         return None
 
-# enviar correo
+
 def enviar_correo_cliente(email, mensaje, asunto):
     try:
         response = sns.publish(
@@ -116,12 +112,11 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
     nota_venta_id = str(uuid.uuid4())
     total = 0
     
-    for producto in productos:
-        producto_info = buscar_productos(producto['ProductoID'])
-        if not producto_info:
-            print(f"Producto con ID {producto['ProductoID']} no encontrado.")
-            continue
-        
+    productos_info = buscar_productos([producto['ProductoID'] for producto in productos])
+    if not productos_info:
+        return Response({"error": "Productos no encontrados"}, status=status.HTTP_400_BAD_REQUEST)
+
+    for producto, producto_info in zip(productos, productos_info):
         precio_unitario = producto_info['precio_base']
         importe = producto['Cantidad'] * precio_unitario
         total += importe
@@ -149,7 +144,7 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
         "Cliente": cliente,
         "DireccionFacturacion": domicilios['DireccionFacturacion'],
         "DireccionEnvio": domicilios['DireccionEnvio'],
-        "Productos": productos,
+        "Productos": productos_info,
         "Total": total
     }
 
@@ -162,7 +157,7 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
         print("Error al subir el PDF a S3")
         return Response({"error": "Error al subir el PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    mensaje = f"Se ha generado una nueva nota de venta. Puedes descargarla aquí: {pdf_url}"
+    mensaje = f"Se ha generado una nueva nota de venta. Puedes descargarla aqui: {pdf_url}"
     enviar_correo_cliente(cliente['correo_electronico'], mensaje, "Nota de Venta Generada")
 
     return Response({
