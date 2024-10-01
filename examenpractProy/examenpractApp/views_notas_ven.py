@@ -65,7 +65,7 @@ def buscar_domicilios(facturacion_id, envio_id):
 def generar_pdf(data):
     pdf_content = f"""
     <h1>Nota de Venta</h1>
-    <p>Cliente: {data['Cliente']['nombre']}</p>
+    <p>Cliente: {data['Cliente']['nombre_comercial']}</p>
     <p>Dirección Facturación: {data['DireccionFacturacion']['domicilio']}</p>
     <p>Dirección Envío: {data['DireccionEnvio']['domicilio']}</p>
     <h2>Productos</h2>
