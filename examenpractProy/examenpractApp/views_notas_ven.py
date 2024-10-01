@@ -92,7 +92,7 @@ def subir_pdf_a_s3(pdf_file, bucket_name, file_name):
 def enviar_correo_cliente(email, mensaje, asunto):
     try:
         response = sns.publish(
-            TopicArn='arn:aws:sns:us-east-1:583004271855:Practica3:d416f749-74ac-4331-9172-0a6923f9993d',
+            TopicArn='arn:aws:sns:us-east-1:583004271855:Practica3',
             Message=mensaje,
             Subject=asunto
         )
