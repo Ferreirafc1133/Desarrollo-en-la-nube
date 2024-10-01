@@ -96,10 +96,10 @@ def enviar_correo_cliente(email, mensaje, asunto):
             Message=mensaje,
             Subject=asunto
         )
-        return response
+        return response['ResponseMetadata']['HTTPStatusCode'] == 200
     except Exception as e:
         print(f"Error al enviar el correo: {e}")
-        return None
+        return False
 
 
 def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_envio_id):
@@ -170,7 +170,9 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
         return Response({"error": "Error al subir el PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     mensaje = f"Se ha generado una nueva nota de venta. Puedes descargarla aquí: {pdf_url}"
-    enviar_correo_cliente(cliente['correo_electronico'], mensaje, "Nota de Venta Generada")
+    if not enviar_correo_cliente(cliente['correo_electronico'], mensaje, "Nota de Venta Generada"):
+        return Response({"error": "No se pudo enviar el correo"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
     return Response({
         "mensaje": "Nota de venta creada correctamente",
