@@ -51,10 +51,10 @@ def buscar_domicilios(facturacion_id, envio_id):
     direccion_envio = response_envio.get('Item', None)
     print(f"Resultado de buscar_domicilios para envio_id {envio_id}: {direccion_envio}")
 
-    if direccion_facturacion and direccion_facturacion['tipo_direccion'] != 'FACTURACIÓN':
+    if direccion_facturacion and direccion_facturacion['tipo_direccion'] != 'FACTURACION':
         return {"error": "La dirección de facturación no es correcta"}
     
-    if direccion_envio and direccion_envio['tipo_direccion'] != 'ENVÍO':
+    if direccion_envio and direccion_envio['tipo_direccion'] != 'ENVIO':
         return {"error": "La dirección de envío no es correcta"}
 
     return {
