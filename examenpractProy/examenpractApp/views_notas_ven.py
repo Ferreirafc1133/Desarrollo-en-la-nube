@@ -26,7 +26,9 @@ def crear_nota_venta_completa(request):
 
 def buscar_cliente(cliente_id):
     response = dynamodb.Table('Clientes').get_item(Key={'ID': cliente_id})
-    return response.get('Item', None)
+    cliente = response.get('Item', None)
+    print(f"Resultado de buscar_cliente para cliente_id {cliente_id}: {cliente}")
+    return cliente
 
 
 def buscar_productos(productos_ids):
@@ -34,6 +36,7 @@ def buscar_productos(productos_ids):
     for producto_id in productos_ids:
         response = dynamodb.Table('Productos').get_item(Key={'ID': producto_id})
         producto = response.get('Item', None)
+        print(f"Resultado de buscar_productos para producto_id {producto_id}: {producto}")
         if producto:
             productos.append(producto)
     return productos
@@ -42,14 +45,16 @@ def buscar_productos(productos_ids):
 def buscar_domicilios(facturacion_id, envio_id):
     response_facturacion = dynamodb.Table('Domicilios').get_item(Key={'ID': facturacion_id})
     direccion_facturacion = response_facturacion.get('Item', None)
+    print(f"Resultado de buscar_domicilios para facturacion_id {facturacion_id}: {direccion_facturacion}")
 
     response_envio = dynamodb.Table('Domicilios').get_item(Key={'ID': envio_id})
     direccion_envio = response_envio.get('Item', None)
+    print(f"Resultado de buscar_domicilios para envio_id {envio_id}: {direccion_envio}")
 
-    if direccion_facturacion and direccion_facturacion['tipo_direccion'] != 'FACTURACION':
+    if direccion_facturacion and direccion_facturacion['tipo_direccion'] != 'FACTURACIÓN':
         return {"error": "La dirección de facturación no es correcta"}
     
-    if direccion_envio and direccion_envio['tipo_direccion'] != 'ENVIO':
+    if direccion_envio and direccion_envio['tipo_direccion'] != 'ENVÍO':
         return {"error": "La dirección de envío no es correcta"}
 
     return {
