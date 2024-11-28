@@ -1,4 +1,5 @@
 from django.urls import path
+from examenpractApp  import views_clientes, views_dom, views_prod
 
 urlpatterns = [
     # prods
