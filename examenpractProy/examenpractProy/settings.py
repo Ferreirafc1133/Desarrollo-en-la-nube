@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'examenpractApp',
+    'catalogos',
+    'notas_venta',
+    'notificaciones',
 ]
 
 MIDDLEWARE = [
