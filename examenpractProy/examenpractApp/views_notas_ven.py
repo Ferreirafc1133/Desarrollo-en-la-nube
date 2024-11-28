@@ -179,3 +179,21 @@ def crear_nota_venta(cliente_id, productos, direccion_facturacion_id, direccion_
         "nota_id": nota_venta_id,
         "pdf_url": pdf_url
     }, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def enviar_correo(request):
+    email = request.data.get('email')
+    mensaje = request.data.get('mensaje')
+    asunto = request.data.get('asunto')
+
+    if not email or not mensaje or not asunto:
+        return Response(
+            {"error": "Faltan datos obligatorios (email, mensaje, asunto)"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    correo_enviado = enviar_correo_cliente(email, mensaje, asunto)
+    if correo_enviado:
+        return Response({"mensaje": "Correo enviado exitosamente"}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Error al enviar el correo"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
