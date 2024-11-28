@@ -1,4 +1,5 @@
 from django.urls import path
+from examenpractApp  import views_notas_ven
 
 urlpatterns = [
     # ruta final
